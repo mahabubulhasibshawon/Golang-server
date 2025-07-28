@@ -43,6 +43,46 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 	encoder.Encode(productList)
 }
 
+// create product (post)
+func createProduct(w http.ResponseWriter, r *http.Request)  {
+	// cors controll allow
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods","POST")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Content-Type", "application/json")
+
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(200)
+		return
+	}
+
+	// if anything else psot request comes it will show error
+	if r.Method != http.MethodPost {
+		http.Error(w, "plz, Give me post request", 400)
+		return
+	}
+
+	var newProduct Product
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&newProduct)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "plz give me a valid json", 400)
+		return
+	}
+
+	// set values to new product
+	newProduct.ID = len(productList) + 1
+
+	productList = append(productList, newProduct)
+	w.WriteHeader(201)
+
+	encoder := json.NewEncoder(w)
+	encoder.Encode(newProduct)
+}
+
 func main() {
 	// Creates a new HTTP request multiplexer (router)
 	mux := http.NewServeMux()
@@ -51,6 +91,7 @@ func main() {
 	mux.HandleFunc("/", helloHandler)
 	mux.HandleFunc("/about", aboutHandler)
 	mux.HandleFunc("/products", getProducts)
+	mux.HandleFunc("/create-product",createProduct)
 
 	// Prints a message to the console indicating the server is running
 	fmt.Println("==== server running on : 8080 ====")
