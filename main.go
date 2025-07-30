@@ -31,31 +31,22 @@ var productList []Product
 // getProducts handler request get api for products
 func getProducts(w http.ResponseWriter, r *http.Request) {
 	// cors controll allow
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
+	handleCors(w)
+	handlePreflightReq(w, r)
 
 	// if anything else get request comes it will show error
 	if r.Method != http.MethodGet {
 		http.Error(w, "plz, Give me get request", 400)
 		return
 	}
-	encoder := json.NewEncoder(w)
-	encoder.Encode(productList)
+	sendData(w, productList, 200)
 }
 
 // create product (post)
 func createProduct(w http.ResponseWriter, r *http.Request)  {
 	// cors controll allow
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods","POST")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Content-Type", "application/json")
-
-
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(200)
-		return
-	}
+	handleCors(w)
+	handlePreflightReq(w, r)
 
 	// if anything else psot request comes it will show error
 	if r.Method != http.MethodPost {
@@ -77,10 +68,29 @@ func createProduct(w http.ResponseWriter, r *http.Request)  {
 	newProduct.ID = len(productList) + 1
 
 	productList = append(productList, newProduct)
-	w.WriteHeader(201)
 
+	sendData(w, newProduct, 201)
+}
+
+// cors handler
+func handleCors(w http.ResponseWriter)  {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods","GET, POST, PUT, PATCH, DELETE, OPTIONS")
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Hasib")
+}
+
+// handle options(preflight request)
+func handlePreflightReq(w http.ResponseWriter, r *http.Request)  {
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(200)
+	}
+}
+
+func sendData(w http.ResponseWriter, data interface{}, statusCode int)  {
+	w.WriteHeader(statusCode)
 	encoder := json.NewEncoder(w)
-	encoder.Encode(newProduct)
+	encoder.Encode(data)
 }
 
 func main() {
