@@ -31,11 +31,11 @@ var productList []Product
 // getProducts handler request get api for products
 func getProducts(w http.ResponseWriter, r *http.Request) {
 	// cors controll allow
-	handleCors(w)
-	if r.Method == http.MethodOptions {
-		handlePreflightReq(w, r)
-		return
-	}
+	// handleCors(w)
+	// if r.Method == http.MethodOptions {
+	// 	handlePreflightReq(w, r)
+	// 	return
+	// }
 
 	// if anything else get request comes it will show error
 	// if r.Method != http.MethodGet {
@@ -48,11 +48,13 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 // create product (post)
 func createProduct(w http.ResponseWriter, r *http.Request) {
 	// cors controll allow
-	handleCors(w)
-	if r.Method == http.MethodOptions {
-		handlePreflightReq(w, r)
-		return
-	}
+	// handleCors(w)
+
+	// == here we were handling ooptions but now we are handling options from global route. that means whatever the reqest is it'll handle options first then it will move forward. so options or preflight hopefully wouldn't bother again
+	// if r.Method == http.MethodOptions {
+	// 	handlePreflightReq(w, r)
+	// 	return
+	// }
 
 	// if anything else psot request comes it will show error
 	// if r.Method != http.MethodPost {
@@ -78,20 +80,20 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 	sendData(w, newProduct, 201)
 }
 
-// cors handler
-func handleCors(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Hasib")
-}
+// // cors handler
+// func handleCors(w http.ResponseWriter) {
+// 	w.Header().Set("Access-Control-Allow-Origin", "*")
+// 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Hasib")
+// }
 
-// handle options(preflight request)
-func handlePreflightReq(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(200)
-	}
-}
+// // handle options(preflight request)
+// func handlePreflightReq(w http.ResponseWriter, r *http.Request) {
+// 	if r.Method == http.MethodOptions {
+// 		w.WriteHeader(200)
+// 	}
+// }
 
 func sendData(w http.ResponseWriter, data interface{}, statusCode int) {
 	w.WriteHeader(statusCode)
@@ -99,25 +101,64 @@ func sendData(w http.ResponseWriter, data interface{}, statusCode int) {
 	encoder.Encode(data)
 }
 
+// // middleware (currently we are not using middleware as we are doing it globally.)
+// func corsHandler(next http.Handler) http.Handler {
+// 	handleCors := func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Access-Control-Allow-Origin", "*")
+// 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Hasib")
+// 		next.ServeHTTP(w, r)
+// 	}
+// 	return http.HandlerFunc(handleCors)
+// }
+
+// global route
+func globalRouter(mux *http.ServeMux) http.Handler {
+	handleAllreq := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Hasib")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(200)
+			return
+		}
+		mux.ServeHTTP(w, r) // it will handle next functions
+	}
+	return http.HandlerFunc(handleAllreq)
+}
+
 func main() {
 	// Creates a new HTTP request multiplexer (router)
 	mux := http.NewServeMux()
 
 	// Registers handler functions
+
+	//  ===handle before go 1.20===
 	// mux.HandleFunc("/", helloHandler)
 	// mux.HandleFunc("/about", aboutHandler)
 	// mux.HandleFunc("/products", getProducts) // this is example of how we used to declare routes before go 1.20
-	mux.Handle("GET /products", http.HandlerFunc(getProducts))
-	mux.Handle("OPTIONS /products", http.HandlerFunc(getProducts))
 
+	// ===advance handler without middleware (we need to handle OPTIONS(preflight) manualy)===
+	// mux.Handle("GET /products", http.HandlerFunc(getProducts))
+	// mux.Handle("OPTIONS /products", http.HandlerFunc(getProducts))
+
+	// mux.Handle("POST /create-product", http.HandlerFunc(createProduct))
+	// mux.Handle("OPTIONS /create-product", http.HandlerFunc(createProduct))
+
+	// ===advance handler with middleware===
+	mux.Handle("GET /products", http.HandlerFunc(getProducts))
 	mux.Handle("POST /create-product", http.HandlerFunc(createProduct))
-	mux.Handle("OPTIONS /create-product", http.HandlerFunc(createProduct))
+
+	// global route
+	globalRouter := globalRouter(mux)
 
 	// Prints a message to the console indicating the server is running
 	fmt.Println("==== server running on : 8080 ====")
 
 	// Starts the HTTP server on port 3000 using the mux router
-	err := http.ListenAndServe(":8080", mux)
+	err := http.ListenAndServe(":8080", globalRouter)
 
 	// If there's an error starting the server, print it
 	if err != nil {
