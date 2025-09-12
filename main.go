@@ -32,27 +32,33 @@ var productList []Product
 func getProducts(w http.ResponseWriter, r *http.Request) {
 	// cors controll allow
 	handleCors(w)
-	handlePreflightReq(w, r)
-
-	// if anything else get request comes it will show error
-	if r.Method != http.MethodGet {
-		http.Error(w, "plz, Give me get request", 400)
+	if r.Method == http.MethodOptions {
+		handlePreflightReq(w, r)
 		return
 	}
+
+	// if anything else get request comes it will show error
+	// if r.Method != http.MethodGet {
+	// 	http.Error(w, "plz, Give me get request", 400)
+	// 	return
+	// }
 	sendData(w, productList, 200)
 }
 
 // create product (post)
-func createProduct(w http.ResponseWriter, r *http.Request)  {
+func createProduct(w http.ResponseWriter, r *http.Request) {
 	// cors controll allow
 	handleCors(w)
-	handlePreflightReq(w, r)
-
-	// if anything else psot request comes it will show error
-	if r.Method != http.MethodPost {
-		http.Error(w, "plz, Give me post request", 400)
+	if r.Method == http.MethodOptions {
+		handlePreflightReq(w, r)
 		return
 	}
+
+	// if anything else psot request comes it will show error
+	// if r.Method != http.MethodPost {
+	// 	http.Error(w, "plz, Give me post request", 400)
+	// 	return
+	// }
 
 	var newProduct Product
 
@@ -73,21 +79,21 @@ func createProduct(w http.ResponseWriter, r *http.Request)  {
 }
 
 // cors handler
-func handleCors(w http.ResponseWriter)  {
+func handleCors(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods","GET, POST, PUT, PATCH, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Hasib")
 }
 
 // handle options(preflight request)
-func handlePreflightReq(w http.ResponseWriter, r *http.Request)  {
+func handlePreflightReq(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(200)
 	}
 }
 
-func sendData(w http.ResponseWriter, data interface{}, statusCode int)  {
+func sendData(w http.ResponseWriter, data interface{}, statusCode int) {
 	w.WriteHeader(statusCode)
 	encoder := json.NewEncoder(w)
 	encoder.Encode(data)
@@ -98,10 +104,14 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Registers handler functions
-	mux.HandleFunc("/", helloHandler)
-	mux.HandleFunc("/about", aboutHandler)
-	mux.HandleFunc("/products", getProducts)
-	mux.HandleFunc("/create-product",createProduct)
+	// mux.HandleFunc("/", helloHandler)
+	// mux.HandleFunc("/about", aboutHandler)
+	// mux.HandleFunc("/products", getProducts) // this is example of how we used to declare routes before go 1.20
+	mux.Handle("GET /products", http.HandlerFunc(getProducts))
+	mux.Handle("OPTIONS /products", http.HandlerFunc(getProducts))
+
+	mux.Handle("POST /create-product", http.HandlerFunc(createProduct))
+	mux.Handle("OPTIONS /create-product", http.HandlerFunc(createProduct))
 
 	// Prints a message to the console indicating the server is running
 	fmt.Println("==== server running on : 8080 ====")
