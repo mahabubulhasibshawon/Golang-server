@@ -1,10 +1,10 @@
 package cmd
 
-
-import (  
+import (
 	globalroute "ecommerce/global_route"
 	"ecommerce/handlers"
-	"fmt"      // Importing the fmt package for formatted I/O
+	"ecommerce/middleware"
+	"fmt" // Importing the fmt package for formatted I/O
 	"net/http" // Importing the net/http package to build HTTP servers
 )
 
@@ -66,9 +66,12 @@ func Serve() {
 	// mux.Handle("OPTIONS /create-product", http.HandlerFunc(createProduct))
 
 	// ===advance handler with middleware===
+
+	mux.Handle("GET /route", middleware.Logger(http.HandlerFunc(handlers.Test)))
+	
 	mux.Handle("GET /products", http.HandlerFunc(handlers.GetProducts))
 	mux.Handle("POST /products", http.HandlerFunc(handlers.CreateProduct))
-	mux.Handle("GET /products/{id}", http.HandlerFunc(handlers.GetProductByID))
+	mux.Handle("GET /products/{productID}", http.HandlerFunc(handlers.GetProductByID))
 
 	// global route
 	globalRouter := globalroute.GlobalRouter(mux)
