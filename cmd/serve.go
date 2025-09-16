@@ -4,7 +4,7 @@ import (
 	globalroute "ecommerce/global_route"
 	"ecommerce/handlers"
 	"ecommerce/middleware"
-	"fmt" // Importing the fmt package for formatted I/O
+	"fmt"      // Importing the fmt package for formatted I/O
 	"net/http" // Importing the net/http package to build HTTP servers
 )
 
@@ -33,7 +33,6 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 // 		w.WriteHeader(200)
 // 	}
 // }
-
 
 // // middleware (currently we are not using middleware as we are doing it globally.)
 // func corsHandler(next http.Handler) http.Handler {
@@ -68,10 +67,10 @@ func Serve() {
 	// ===advance handler with middleware===
 
 	mux.Handle("GET /route", middleware.Logger(http.HandlerFunc(handlers.Test)))
-	
-	mux.Handle("GET /products", http.HandlerFunc(handlers.GetProducts))
-	mux.Handle("POST /products", http.HandlerFunc(handlers.CreateProduct))
-	mux.Handle("GET /products/{productID}", http.HandlerFunc(handlers.GetProductByID))
+
+	mux.Handle("GET /products", middleware.Logger(http.HandlerFunc(handlers.GetProducts)))
+	mux.Handle("POST /products", middleware.Logger(http.HandlerFunc(handlers.CreateProduct)))
+	mux.Handle("GET /products/{productID}", middleware.Logger(http.HandlerFunc(handlers.GetProductByID)))
 
 	// global route
 	globalRouter := globalroute.GlobalRouter(mux)
